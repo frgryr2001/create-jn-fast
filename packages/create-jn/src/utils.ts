@@ -125,6 +125,27 @@ export function mergePackageJson(srcPath: string, destPath: string): void {
 }
 
 /**
+ * Copy a single file if it exists
+ */
+export function copyFileIfExists(
+  srcPath: string,
+  destPath: string,
+  options?: { createDir?: boolean },
+): boolean {
+  if (!fs.existsSync(srcPath)) {
+    return false;
+  }
+
+  if (options?.createDir) {
+    const dir = path.dirname(destPath);
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  fs.copyFileSync(srcPath, destPath);
+  return true;
+}
+
+/**
  * Copy folder with merge package.json option
  */
 export function copyFolder(options: {

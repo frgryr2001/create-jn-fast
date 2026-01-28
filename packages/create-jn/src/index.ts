@@ -17,6 +17,7 @@ import {
   toValidPackageName,
 } from './utils';
 import { templates } from './templates';
+import { extraTools } from './tools';
 
 const argv = minimist<{
   template?: string;
@@ -153,9 +154,6 @@ async function main() {
       results.template = templateResponse;
     }
 
-    // Lazy load extra tools only when needed
-    const { extraTools } = await import('./tools');
-
     // Ask for extra tools (optional)
     const extraToolsResponse = await p.multiselect({
       message: 'Select additional tools (Space to select, Enter to confirm):',
@@ -232,9 +230,6 @@ async function main() {
   // Apply extra tools actions
   if (selectedTools.length > 0) {
     p.log.info('Applying extra tools...');
-
-    // Import tools module when needed
-    const { extraTools } = await import('./tools');
 
     for (const toolValue of selectedTools) {
       const tool = extraTools.find((t) => t.value === toolValue);

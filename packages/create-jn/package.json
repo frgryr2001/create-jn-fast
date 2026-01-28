@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsdown",
+    "start": "node dist/index.js",
     "dev": "tsdown --watch",
     "typecheck": "tsc",
     "verify": "pnpm run typecheck && pnpm run build",

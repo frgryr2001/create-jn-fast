@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { copyFolder } from './utils';
+import { copyFileIfExists, copyFolder, mergePackageJson } from './utils';
 
 export type ToolContext = {
   templateName: string;
@@ -33,23 +33,37 @@ export const extraTools: Tool[] = [
       });
 
       // Insert tailwindcss import to main CSS file
-      const mainCssFiles = ['index.css', 'App.css'];
-      for (const cssFile of mainCssFiles) {
-        const filePath = path.join(distFolder, 'src', cssFile);
-        if (fs.existsSync(filePath)) {
-          const content = await fs.promises.readFile(filePath, 'utf-8');
-          // Only add if not already present
-          if (!content.includes('@import \'tailwindcss\'')) {
-            await fs.promises.writeFile(
-              filePath,
-              `@import 'tailwindcss';\n\n${content}`,
-            );
-          }
-          break;
+      //   const mainCssFiles = ['index.css', 'App.css'];
+      //   for (const cssFile of mainCssFiles) {
+      //     const filePath = path.join(distFolder, 'src', cssFile);
+      //     if (fs.existsSync(filePath)) {
+      //       const content = await fs.promises.readFile(filePath, 'utf-8');
+      //       // Only add if not already present
+      //       if (!content.includes('@import \'tailwindcss\'')) {
+      //         await fs.promises.writeFile(
+      //           filePath,
+      //           `@import 'tailwindcss';\n\n${content}`,
+      //         );
+      //       }
+      //       break;
+      //     }
+      const filePath = path.join(distFolder, 'src', 'styles', 'global.css');
+      if (fs.existsSync(filePath)) {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        // Only add if not already present
+        if (!content.includes("@import 'tailwindcss'")) {
+          await fs.promises.writeFile(
+            filePath,
+            `@import 'tailwindcss';\n\n${content}`,
+          );
         }
+      } else {
+        // Create the file with Tailwind import if it doesn't exist
+        const dir = path.dirname(filePath);
+        fs.mkdirSync(dir, { recursive: true });
+        await fs.promises.writeFile(filePath, "@import 'tailwindcss';\n");
       }
     },
-
   },
   {
     value: 'shadcn',
@@ -59,33 +73,33 @@ export const extraTools: Tool[] = [
       const from = path.join(templatesDir, 'template-shadcn');
 
       // Copy lib folder to src/lib
-      const libSrc = path.join(from, 'lib');
+      const libSrc = path.join(from, 'src', 'lib');
       const libDest = path.join(distFolder, 'src', 'lib');
       if (fs.existsSync(libSrc)) {
         fs.cpSync(libSrc, libDest, { recursive: true });
       }
 
-      // Copy global.css to src/styles/global.css
-      const globalCssSrc = path.join(from, 'global.css');
-      const globalCssDest = path.join(distFolder, 'src', 'styles', 'global.css');
-      if (fs.existsSync(globalCssSrc)) {
-        fs.mkdirSync(path.dirname(globalCssDest), { recursive: true });
-        fs.copyFileSync(globalCssSrc, globalCssDest);
-      }
+      // Copy files to destination
+      copyFileIfExists(
+        path.join(from, 'src', 'styles', 'global.css'),
+        path.join(distFolder, 'src', 'styles', 'global.css'),
+        { createDir: true },
+      );
 
-      // Copy component.json to root
-      const componentJsonSrc = path.join(from, 'component.json');
-      const componentJsonDest = path.join(distFolder, 'component.json');
-      if (fs.existsSync(componentJsonSrc)) {
-        fs.copyFileSync(componentJsonSrc, componentJsonDest);
-      }
+      copyFileIfExists(
+        path.join(from, 'postcss.config.mjs'),
+        path.join(distFolder, 'postcss.config.mjs'),
+      );
 
-      // Overwrite tsconfig.json
-      const tsconfigSrc = path.join(from, 'tsconfig.json');
-      const tsconfigDest = path.join(distFolder, 'tsconfig.json');
-      if (fs.existsSync(tsconfigSrc)) {
-        fs.copyFileSync(tsconfigSrc, tsconfigDest);
-      }
+      copyFileIfExists(
+        path.join(from, 'component.json'),
+        path.join(distFolder, 'component.json'),
+      );
+
+      copyFileIfExists(
+        path.join(from, 'tsconfig.json'),
+        path.join(distFolder, 'tsconfig.json'),
+      );
 
       // Merge package.json using utility function
       mergePackageJson(
@@ -93,5 +107,5 @@ export const extraTools: Tool[] = [
         path.join(distFolder, 'package.json'),
       );
     },
-  }
+  },
 ];
