@@ -46,6 +46,8 @@ type PromptResults = {
   extraTools: string[];
 };
 
+
+
 async function main() {
   const argTargetDir = formatTargetDir(argv._[0]);
   const argTemplate = argv.template || argv.t;
